@@ -1,0 +1,20 @@
+[provider] chat = gemini:gemini-3.5-flash-lite | embedding = gemini:gemini-embedding-2
+[chat] 429 rate limit - waiting 9s then retry (1/5)
+[chat] 429 rate limit - waiting 55s then retry (1/5)
+Đã nạp 18 điều luật + 20 bài báo: 198 node / 376 cạnh (20 lần gọi LLM, $0.00562, 109.4s)
+  node  Clause               99
+  node  Person               39
+  node  Article              18
+  node  Crime                13
+  node  Case                 13
+  node  Substance            11
+  node  Location             5
+  cạnh  MENTIONS             169
+  cạnh  HAS_CLAUSE           99
+  cạnh  INVOLVED_IN          48
+  cạnh  INVOLVES             19
+  cạnh  CHARGED_WITH         16
+  cạnh  DEFINES              13
+  cạnh  LOCATED_IN           12
+  Label không có doc_id: Crime, Location, Substance, Person (chỉ hợp lệ nếu là node dùng chung giữa nhiều tài liệu, ví dụ tội danh, chất)
+Mở http://localhost:7474 để xem graph (LAB_GUIDE.md Bước 8.1).

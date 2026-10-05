@@ -197,7 +197,12 @@ def main() -> int:
     questions = json.loads(Path("data/benchmark_kg.json").read_text(encoding="utf-8"))
 
     # --- Indexing. Flat RAG = embed chunks. GraphRAG = the same vector index + KG build.
-    store = EmbeddingStore(collection_name="drug_kb", embedding_fn=llm.embed)
+    # batch_embedding_fn: ~ceil(len(chunks)/EMBED_BATCH_SIZE) API calls instead of one per chunk,
+    # which keeps a few hundred chunks inside the provider's per-minute embedding quota.
+    print(f"[index] embedding {len(chunks)} chunk qua {llm.embedding_model} "
+          f"(lô {llm_mod.EMBED_BATCH_SIZE}/request)...", flush=True)
+    store = EmbeddingStore(collection_name="drug_kb", embedding_fn=llm.embed,
+                           batch_embedding_fn=llm.embed_batch)
     _, flat_index = metered(llm, lambda: store.add_documents(chunks))
 
     graph = connect_graph()
@@ -228,7 +233,11 @@ def main() -> int:
     lines.append("== Indexing (one-off)")
     lines.append(f"{'pipeline':8} {'calls':>6} {'in_tok':>9} {'out_tok':>8} {'USD':>9} {'seconds':>8}")
     for name, u in (("flat", flat_index), ("graph", graph_index)):
-        lines.append(f"{name:8} {u.calls:>6} {u.input_tokens:>9} {u.output_tokens:>8} {u.usd:>9.5f} {u.seconds:>8.1f}")
+        mark = "~" if u.est_input_tokens else " "
+        lines.append(f"{name:8} {u.calls:>6} {mark}{u.input_tokens:>8} {u.output_tokens:>8} {u.usd:>9.5f} {u.seconds:>8.1f}")
+    if flat_index.est_input_tokens:
+        lines.append(f"~ = in_tok uoc luong (~{llm_mod.CHARS_PER_TOKEN} ky tu/token) vi provider khong tra usage cho "
+                     f"{llm.embedding_model}; chi co dung o dong nay, khong phai so do thuc.")
     lines += ["", "== Querying (mean per question)"]
     lines.append(f"{'pipeline':8} {'recall':>7} {'judge':>6} {'in_tok':>8} {'out_tok':>8} {'USD':>9} {'seconds':>8}")
     for name in ("flat", "graph"):
